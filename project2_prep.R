@@ -31,24 +31,34 @@ test <- train %>%
   filter(!id %in% val$id) %>% 
   sample_n(40000)
 write_csv(test, 'test.csv')
-  
-train2 <- train %>% 
+
+train <- train %>% 
   filter(!id %in% val$id,
          !id %in% test$id)
-write_csv(train2, 'train.csv')
+write_csv(train, 'train.csv')
 
 ########################################################
 #Make train, val, test folders and move the images there
 ########################################################
-dir.create("project_train", showWarnings = FALSE)
-dir.create("project_test", showWarnings = FALSE)
-dir.create("project_val", showWarnings = FALSE)
+dir.create(here("project_train"))
+dir.create(here("project_train", "0"))
+dir.create(here("project_train", "1"))
+dir.create("project_test")
+dir.create(here("project_val"))
+dir.create(here("project_val",'0'))
+dir.create(here("project_val",'1'))
 
-file.copy(from = here('train', train2$filename),
-          to   = here('project_train', train2$filename))
+file.copy(from = here('train', train$filename[train$label == 0]),
+          to   = here("project_train", "0", train$filename[train$label == 0]))
 
-file.copy(from = here('train', val$filename),
-          to   = here('project_val', val$filename))
+file.copy(from = here('train', train$filename[train$label == 1]),
+          to   = here("project_train", "1", train$filename[train$label == 1]))
+
+file.copy(from = here('train', val$filename[val$label == 0]),
+          to   = here("project_val", "0", val$filename[val$label == 0]))
+
+file.copy(from = here('train', val$filename[val$label == 1]),
+          to   = here("project_val", "1", val$filename[val$label == 1]))
 
 file.copy(from = here('train', test$filename),
           to   = here('project_test', test$filename))
