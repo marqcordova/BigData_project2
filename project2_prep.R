@@ -4,7 +4,7 @@ library(here)
 
 list.files(here())
 
-train <- read_csv('train_labels.csv') %>% 
+train <- read_csv('train_labels.csv') %>%
   mutate(filename = paste(id,'.tif',sep=''))
 
 #Move all of the orginal training images to a folder called "kaggle_train"
