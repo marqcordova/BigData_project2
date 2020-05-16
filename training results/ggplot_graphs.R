@@ -43,9 +43,24 @@ data <- lapply(seq_along(data), function(index) {
 # Combine all of the dataframes into a master df
 df <- data %>% reduce(full_join)
 
-# Compare all of the networks' losses
-ggplot(data = df, aes(x = X, y = loss, color=filename)) +
+# Mobilenet epoch validation accuracy graph
+ggplot(data = df[df$filename == "Mobilenet",], aes(x = X, y = acc * 100)) +
   theme(
+    panel.background = element_rect(fill = "white", color = "white",  size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.25, linetype = 'dashed', color = "black"),
+    panel.grid.minor = element_line(size = 0.1, linetype = 'dotted', color = "black")
+  ) +
+  ggtitle("Mobilenet Model Accuracy") +
+  guides( color=guide_legend(title="Data", labels = c("Training", "Validation"))) +
+  xlab("Epoch") +
+  ylab("Accuracy (Percent Correct)") +
+  geom_line(size = 1, aes(color = "Training Data")) +
+  geom_line(aes(y = val_acc * 100, color = "Test Data"), size = 1)
+
+# Compare all of the networks' accuracies
+ggplot(data = df, aes(x = X, y = acc, color=filename)) +
+  theme(
+    panel.border = element_rect(fill = NA, color = "black",  size = 0.5, linetype = "solid"),
     panel.background = element_rect(fill = "white", color = "white",  size = 0.5, linetype = "solid"),
     panel.grid.major = element_line(size = 0.25, linetype = 'dashed', color = "black"),
     panel.grid.minor = element_line(size = 0.1, linetype = 'dotted', color = "black")
@@ -55,7 +70,7 @@ ggplot(data = df, aes(x = X, y = loss, color=filename)) +
   guides(color=guide_legend(title="Network")) +
   facet_grid(filename ~ ., scales = "free_y") +
   geom_line(size = 1) +
-  geom_line(aes(x = X, y = val_loss, color=filename), size = 1, linetype = "dashed")
+  geom_line(aes(x = X, y = val_acc, color=filename), size = 1, linetype = "dashed")
 
 ggplot(data = df, aes(x = X, y = acc, color=filename)) +
   theme(
