@@ -38,3 +38,19 @@ for i in range(len(test.filename)):
         final_pred.append(0)
     if i % 1000 == 0:
         print(i)
+
+len(final_pred)
+
+test.label[0:len(final_pred)]
+
+correct = 0 
+for i in zip(final_pred, test.label[0:len(final_pred)]):
+    if i[0] == i[1]:
+        print('correct')
+        correct += 1
+    else:
+        print('incorrect')
+  
+#Test accuracy
+print(correct/len(final_pred))
+
