@@ -1,3 +1,5 @@
+#trains mobilenet 
+#added callbacks to save best model based on val_acc and RLR by 1/5 after 5 epochs
 #load tensorflow
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
