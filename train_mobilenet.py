@@ -87,11 +87,24 @@ model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=base_learning_rate),
               loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
+#add callback to save best model based on val_acc
+my_callbacks = [
+    #tf.keras.callbacks.EarlyStopping(patience=2),
+    tf.keras.callbacks.ModelCheckpoint(filepath='model.{epoch:02d}-{val_loss:.2f}.h5',
+                                        monitor='val_acc', 
+                                        verbose=1,
+                                        save_best_only=True),
+    tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', 
+                                         factor=0.2,
+                                         patience=5)
+]
+
 
 history = model.fit_generator(
     train_data_gen,
     steps_per_epoch= total_train // batch_size,
     epochs=epochs,
+    callbacks=my_callbacks,
     validation_data=val_data_gen,
     validation_steps= total_val // batch_size
 )
