@@ -1,0 +1,106 @@
+---
+title: "Project 2"
+author: "Jack Woods"
+date: "5/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Setup RMD and libraries
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls(all.names = TRUE)) # Clear r workspace
+library(ggplot2) # Include ggplot for graphs
+library(here) # Allows r to use real relative paths to files
+library(tidyverse) # Sometimes it is hard to imagine life without tidyverse
+library(randomForest) # Basic random forest
+library(OpenImageR) # For Image processing
+set.seed(01171998) # We want to use the same seed each time the script is run
+
+
+# Set the working directory
+knitr::opts_chunk$set(echo = TRUE, root.dir=here())
+
+# Load the images by creating a list of file paths
+directoryListing <- data.frame(filename = list.files(paste(here(), "/data/project_train/0", sep = ""), full.names = TRUE), class = 0)
+directoryListing <- rbind(directoryListing, data.frame(filename = list.files(paste(here(), "/data/project_train/1", sep = ""), full.names = TRUE), class = 1))
+
+# Randomly select rows from the directory listing
+imageSample <- sample_n(directoryListing, 1000)
+
+# Load the images into memory
+images <- lapply(as.character(imageSample$filename), readImage)
+#images <- lapply(images, cropImage, new_width = 32, new_height = 32, type = 'equal_spaced') # We're only looking at the center 32x32 square. This is a restriction imposed through the kaggle dataset description.
+dim(images)
+imageShow(images[[2]]) # Run this command in your console to see a rendered image. This function does not play well with r markdown.
+```
+
+At this point, imageSamplePaths contains references to images selected by a random sampling of our training data. These references were used to load all of the images into a list of 96x96x3 matrices. Now, we extract features from the images.
+
+```{r}
+# Gamma Correction
+gammaCorrected <- lapply(images, gamma_correction, gamma = 2)
+gammaCorrected <- lapply(gammaCorrected, array)
+
+# Edge Detection
+imagesEdgeDetected <- lapply(images, edge_detection, method = 'Scharr', conv_mode = 'same')
+imagesEdgeDetected <- lapply(imagesEdgeDetected, array)
+
+# Edge Thresholded
+imagesThresholded <- lapply(images, image_thresholding, thresh = 0.5)
+imagesThresholded <- lapply(imagesThresholded, array)
+
+# Histogram of Oriented Gradients (HOG)
+imagesHogged <- lapply(images, HOG, cells = 3, orientations = 6)
+
+imageFeatures <- lapply(seq_along(gammaCorrected), function(index) {
+  df1 <- append(gammaCorrected[[index]], imagesEdgeDetected[[index]])
+  df2 <- append(imagesThresholded[[index]], imagesHogged[[index]])
+  return(append(df1, df2))
+})
+
+imagesDF <- lapply(seq_along(images), function(index) {
+  df <- data.frame(image = rep(index, times = length(imageFeatures[[1]])), class = rep(imageSample$class[[index]], times = length(imageFeatures[[1]])), x = 1:length(imageFeatures[[1]]), value = imageFeatures[[index]])
+})
+imagesDF <- bind_rows(imagesDF)
+imagesDF <- imagesDF %>% spread(x, value)
+imageClassKey <- imagesDF$class
+features <- imagesDF[,(3:64568)]
+
+# Train the Model!
+rf <- randomForest(x = features, y = as.factor(imageClassKey), ntree = 500)
+rfErrors = data.frame(xAxis = 1:500, error = rf$err.rate)
+
+ggplot(data = rfErrors, aes(x = 1:500)) +
+  geom_line(aes(y = error.OOB * 100,  color = "black")) +
+  geom_line(aes(y = error.0 * 100, color = "blue")) +
+  geom_line(aes(y = error.1 * 100, color = "red")) +
+  xlab("Number of Trees") +
+  ylab("Error (Percentage)") +
+  scale_color_manual(name = 'Error Type', 
+         values =c("red" = "red", "black" = "black", "blue" = "blue"), labels = c("Cancerous", "Not Cancerous", "OOB")) +
+  ggtitle("Random Forest Accuracy (Including Gamma and Edge Detection Seperately)")
+
+```
+
+```{r}
+
+# Gamma Correction
+gammaCorrected <- lapply(images, gamma_correction, gamma = 2)
+
+# Edge Detection
+imagesEdgeDetected <- lapply(gammaCorrected, edge_detection, method = 'Scharr', conv_mode = 'same')
+
+# Histogram of Oriented Gradients (HOG)
+imagesHogged <- lapply(imagesEdgeDetected, HOG, cells = 3, orientations = 6)
+
+
+# Create a Dataframe with all the HOGS and class data
+imagesDF <- lapply(seq_along(imagesHogged), function(index) {
+  df <- data.frame(image = index, class = imageSample$class[[index]], x = 1:54, value = imagesHogged[[index]])
+  return(df)
+})
+imagesHoggedDF <- bind_rows(imagesHoggedDF)
+imagesHoggedDF <- imagesHoggedDF %>% spread(x, value)
+imageClassKey <- imagesHoggedDF$class
+features <- imagesHoggedDF[,(3:50)]
+```
