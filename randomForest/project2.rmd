@@ -12,12 +12,57 @@ rm(list = ls(all.names = TRUE)) # Clear r workspace
 library(ggplot2) # Include ggplot for graphs
 library(here) # Allows r to use real relative paths to files
 library(tidyverse) # Sometimes it is hard to imagine life without tidyverse
-# Libraries for  random forest
-library(rsample) # For splitting up data
 library(randomForest) # Basic random forest
+library(OpenImageR) # For Image processing
+set.seed(01171998) # We want to use the same seed each time the script is run
+
 
 # Set the working directory
 knitr::opts_chunk$set(echo = TRUE, root.dir=here())
 
-# Load the data
+# Load the images by creating a list of file paths
+directoryListing <- data.frame(filename = list.files(paste(here(), "/data/project_train/0", sep = ""), full.names = TRUE), class = 0)
+directoryListing <- rbind(directoryListing, data.frame(filename = list.files(paste(here(), "/data/project_train/1", sep = ""), full.names = TRUE), class = 1))
+
+# Randomly select rows from the directory listing
+imageSample <- sample_n(directoryListing, 100)
+
+# Load the images into memory
+images <- lapply(as.character(imageSample$filename), readImage)
+#images <- lapply(images, cropImage, new_width = 32, new_height = 32, type = 'equal_spaced') # We're only looking at the center 32x32 square. This is a restriction imposed through the kaggle dataset description.
+dim(images)
+imageShow(images[[2]]) # Run this command in your console to see a rendered image. This function does not play well with r markdown.
 ```
+
+At this point, imageSamplePaths contains references to images selected by a random sampling of our training data. These references were used to load all of the images into a list of 96x96x3 matrices. Now, we extract features from the images.
+
+```{r}
+# Gamma Correction
+gammaCorrected <- lapply(images, gamma_correction, gamma = 2)
+
+# Edge Detection
+imagesEdgeDetected <- lapply(gammaCorrected, edge_detection, method = 'Scharr', conv_mode = 'same')
+
+# Histogram of Oriented Gradients (HOG)
+imagesHogged <- lapply(imagesEdgeDetected, HOG, cells = 3, orientations = 6)
+
+# Create a Dataframe with all the HOGS and class data
+imagesHoggedDF <- lapply(seq_along(imagesHogged), function(index) {
+  df <- data.frame(y = imagesHogged[[index]], x = 1:54, class = imageSample$class[[index]])
+  return(df)
+})
+
+imagesHoggedDF <- bind_rows(imagesHoggedDF)
+
+
+# Graph HOG for 
+ggplot(data = imagesHoggedDF, aes(x = x, y = y, color = as.factor(class))) +
+  geom_point()
+
+```
+
+```{r}
+featuresByImage <- data.frame()
+rf <- randomForest()
+```
+
