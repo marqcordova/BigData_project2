@@ -1,0 +1,23 @@
+---
+title: "Project 2"
+author: "Jack Woods"
+date: "5/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Setup RMD and libraries
+knitr::opts_chunk$set(echo = TRUE)
+rm(list = ls(all.names = TRUE)) # Clear r workspace
+library(ggplot2) # Include ggplot for graphs
+library(here) # Allows r to use real relative paths to files
+library(tidyverse) # Sometimes it is hard to imagine life without tidyverse
+# Libraries for  random forest
+library(rsample) # For splitting up data
+library(randomForest) # Basic random forest
+
+# Set the working directory
+knitr::opts_chunk$set(echo = TRUE, root.dir=here())
+
+# Load the data
+```
