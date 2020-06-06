@@ -2,16 +2,21 @@
 library(tidyverse)
 library(here)
 library(ggthemes)
+#pull filenames in results folder
 filenames <- list.files(here())
 
+#get all of the files for the pre-made tf models/weights. 
+#you might need different index
 dat <-map(list.files(here())[7:10], read_csv)
 
+#bind dataframes together and get the vars in the correct shape
 dat2 <- bind_rows(dat, .id = "column_label") %>% 
   rename(epoch = X1) %>% 
   gather(key = 'acc_name', value = 'acc_value', acc, val_acc) %>% 
   mutate(acc_name = ifelse(acc_name == 'acc', 'Train', 'Validation'))
   #unite('loss', filename, loss_name, sep = ' - - ')
 
+#plot the data for the pre-made architectures
 ggplot(data = dat2, aes(x = epoch, y = acc_value, col = model, lty = acc_name))+
   geom_line(size = 1)+
   xlim(0,40)+
@@ -23,6 +28,7 @@ ggplot(data = dat2, aes(x = epoch, y = acc_value, col = model, lty = acc_name))+
   scale_color_ptol()+
   theme_bw()
 
+#Do the same things as above for the simple models
 dat <-map(list.files(here(), pattern = '.csv')[1:7], read_csv)
 
 dat2 <- bind_rows(dat, .id = "column_label") %>% 
