@@ -16,7 +16,7 @@ path_to_images = os.path.join('C:\\Users\\cordovam\\Desktop\\project 2')
 train_dir = os.path.join(path_to_images, 'project_train')
 val_dir = os.path.join(path_to_images, 'project_val')
 
-#Raths to individual class folders
+#Paths to individual class folders
 train_0_dir = os.path.join(train_dir, '0')
 train_1_dir = os.path.join(train_dir, '1')
 val_0_dir = os.path.join(val_dir, '0')
@@ -26,10 +26,12 @@ val_1_dir = os.path.join(val_dir, '1')
 total_train = len(os.listdir(train_0_dir))+ len(os.listdir(train_1_dir))
 total_val = len(os.listdir(val_0_dir))+ len(os.listdir(val_1_dir))
 
-#Parameters
+#########Hyper Parameters############
+#Feed 256 images into the model at a time 
 batch_size = 256
+#40 epochs of training should be enough to fit the model(s)
 epochs = 40
-#Image size
+#Image dimensions
 IMG_HEIGHT = 96
 IMG_WIDTH = 96
 
@@ -38,7 +40,7 @@ train_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our t
 
 validation_image_generator = ImageDataGenerator(rescale=1./255) # Generator for our validation data
 
-#We're going to use flow from directory, because this is too big for my ram
+#We're going to use flow from directory, because this is too big for ram
 train_data_gen = train_image_generator.flow_from_directory(batch_size=batch_size,
                                                            directory=train_dir,
                                                            shuffle=True,
@@ -51,6 +53,7 @@ val_data_gen = validation_image_generator.flow_from_directory(batch_size=batch_s
                                                               class_mode='binary')
 
 #A basic starter model with only conv and pool layers
+#basic model is using 3x3 kernels at 16,32 and 64 per conv layer
 model = Sequential([
     Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
     MaxPooling2D(),
@@ -67,17 +70,20 @@ model.compile(optimizer='adam',
               loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
+#look at the architecture of the model before fitting
 model.summary()
 
 #fit the model and save results as 'history'
 history = model.fit_generator(
     train_data_gen,
+  #This many steps means each training image is used ~1x per epoch
     steps_per_epoch= total_train // batch_size,
     epochs=epochs,
     validation_data=val_data_gen,
     validation_steps=total_val // batch_size
 )
 
+#extract the accuracy and loss values for each epoch of on train and val
 acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
 
@@ -86,7 +92,7 @@ val_loss=history.history['val_loss']
 
 epochs_range = range(epochs)
 
-#performance data to save as csv
+#Save the training performance data so that we can make plots in R later
 filename = 'dropoutF_augF_simplest_mod.csv'
 pd.DataFrame(data = np.column_stack((acc, val_acc, loss, val_loss)), 
              columns = ['acc', 'val_acc', 'loss', 'val_loss'], 
