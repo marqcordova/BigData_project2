@@ -52,15 +52,50 @@ val_data_gen = validation_image_generator.flow_from_directory(batch_size=batch_s
                                                               target_size=(IMG_HEIGHT, IMG_WIDTH),
                                                               class_mode='binary')
 
+
+#Take a look at some images
+# def plotImages(images_arr):
+#     fig, axes = plt.subplots(1, 5, figsize=(20,20))
+#     axes = axes.flatten()
+#     for img, ax in zip( images_arr, axes ):
+#         ax.imshow(img)
+#         ax.axis('off')
+#     plt.tight_layout()
+#     plt.show()
+
+# plotImages(sample_training_images[:5])
+
 #A basic starter model with only conv and pool layers
 #basic model is using 3x3 kernels at 16,32 and 64 per conv layer
+#############PICK A NETWORK
+# simple network
+# model = Sequential([
+#     Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+#     MaxPooling2D(),
+#     Conv2D(32, 3, padding='same', activation='relu'),
+#     MaxPooling2D(),
+#     Conv2D(64, 3, padding='same', activation='relu'),
+#     MaxPooling2D(),
+#     Flatten(),
+#     Dense(512, activation='relu'),
+#     Dense(1)
+# ])
+
+# simple network with dropout
+#This area is good to play around with other models
 model = Sequential([
-    Conv2D(16, 3, padding='same', activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
+    Conv2D(16, 3, padding='same', activation='relu', 
+            input_shape=(IMG_HEIGHT, IMG_WIDTH ,3)),
     MaxPooling2D(),
+    Dropout(0.2),
     Conv2D(32, 3, padding='same', activation='relu'),
     MaxPooling2D(),
     Conv2D(64, 3, padding='same', activation='relu'),
     MaxPooling2D(),
+    Dropout(0.2),
+  #If we want a deeper model uncomment these 2 layers
+    #Conv2D(128, 3, padding='same', activation='relu'),
+    #MaxPooling2D(),
     Flatten(),
     Dense(512, activation='relu'),
     Dense(1)
